@@ -1,0 +1,25 @@
+{
+  "name": "houmio-driver-helvar-router",
+  "version": "1.0.0",
+  "description": "Houm driver for Helvar router",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/houmio/houmio-driver-helvar-router.git"
+  },
+  "author": "Antti Ropponen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/houmio/houmio-driver-helvar-router/issues"
+  },
+  "homepage": "https://github.com/houmio/houmio-driver-helvar-router#readme",
+  "dependencies": {
+    "async": "^1.5.0",
+    "baconjs": "^0.7.82",
+    "carrier": "^0.2.1",
+    "net": "^1.0.2"
+  }
+}
