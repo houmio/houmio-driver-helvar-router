@@ -7,7 +7,7 @@ R = require('ramda')
 
 
 routerPortsS = process.env.ROUTER_PORTS
-routerPorts = routerPortsS.split(':')
+routerPorts = routerPortsS.split(',')
 
 exit = (msg) ->
   console.log msg
@@ -20,10 +20,17 @@ bridgeSocket = new net.Socket()
 routerSocket = new net.Socket()
 
 
+parseUniverseAddress = (command) ->
+	command.data.universeAddress = command.data.protocolAddress.split('/')[0]
+	command.data.protocolAddress = command.data.protocolAddress.split('/')[1]
+	command
 
 toDaliCommand = (command) ->
 	bri = if command.data.on then command.data.bri else 0
-	return '>V:1,C:13,G:'+command.data.protocolAddress+',L:'+bri+',F:50#'
+	{
+		universeAddress: parseInt(command.data.universeAddress),
+		commandStr: '>V:1,C:13,G:'+command.data.protocolAddress+',L:'+bri+',F:50#'
+	}
 
 isWriteMessage = (message) -> message.command is "write"
 
@@ -46,8 +53,9 @@ openBridgeWriteMessageStream = (socket, protocolName, cb) ->
 runDriver = (routerSockets) ->
 	openBridgeWriteMessageStream bridgeSocket, "HELVAR-ROUTER", (daliWriteMessages) ->
 		daliWriteMessages
+			.map parseUniverseAddress
     	.map toDaliCommand
-    	.onValue (d) -> routerSockets[1].write JSON.stringify d
+    	.onValue (d) -> routerSockets[d.universeAddress].write JSON.stringify d.commandStr
 		bridgeSocket.write (JSON.stringify { command: "driverReady", protocol: "helvar-router"}) + "\n"
 
 createSocket = (port, cb) ->
