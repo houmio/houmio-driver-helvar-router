@@ -2,8 +2,9 @@ net = require('net')
 Bacon = require('baconjs')
 carrier = require('carrier')
 async = require('async')
+R = require('ramda')
 
-console.log("KULLI")
+
 
 routerPortsS = process.env.ROUTER_PORTS
 routerPorts = routerPortsS.split(':')
@@ -33,28 +34,33 @@ toLines = (socket) ->
     socket.on "error", (err) -> sink new Bacon.Error(err)
     ( -> )
 
-openBridgeWriteMessageStream = (socket, protocolName) -> (cb) ->
+openBridgeWriteMessageStream = (socket, protocolName, cb) ->
   socket.connect houmioBridge.split(":")[1], houmioBridge.split(":")[0], ->
     lineStream = toLines socket
     messageStream = lineStream.map JSON.parse
     messageStream.onEnd -> exit "Bridge stream ended, protocol: #{protocolName}"
     messageStream.onError (err) -> exit "Error from bridge stream, protocol: #{protocolName}, error: #{err}"
     writeMessageStream = messageStream.filter isWriteMessage
-    cb null, writeMessageStream
+    cb writeMessageStream
 
-openStreams = [ openBridgeWriteMessageStream(bridgeSocket, "HELVAR-ROUTER")]
+runDriver = (routerSockets) ->
+	openBridgeWriteMessageStream bridgeSocket, "HELVAR-ROUTER", (daliWriteMessages) ->
+		daliWriteMessages
+    	.map toDaliCommand
+    	.onValue (d) -> routerSockets[1].write JSON.stringify d
+		bridgeSocket.write (JSON.stringify { command: "driverReady", protocol: "helvar-router"}) + "\n"
 
-async.series openStreams, (err, [daliWriteMessages]) ->
-  if err then exit err
-  daliWriteMessages
-    .map toDaliCommand
-    .onValue (d) -> routerSocket.write JSON.stringify d
+createSocket = (port, cb) ->
+	socket = new net.Socket()
+	socket.connect port, '127.0.0.1', ->
+		console.log("Connected to a router at port #{port}")
+		socket.on "error", (err) -> exit(err)
+		socket.on "close", -> exit("Socket closed")
+		cb(null,socket)
 
-	bridgeSocket.write (JSON.stringify { command: "driverReady", protocol: "helvar-router"}) + "\n"
+routerSockets = async.mapSeries routerPorts, createSocket, (err, routerSockets) ->
+	runDriver routerSockets
+	if err then exit("Router connection error")
 
 
-routerSocket.connect routerPorts[0], '127.0.0.1', ->
-	routerSocket.on "error", (err) -> exit(err)
-	routerSocket.on "close", -> exit("Socket closed")
-	#routerSocket.on "data", (data) -> console.log data
 
