@@ -30,7 +30,7 @@ toDaliCommand = (command) ->
 	{
 		universeAddress: parseInt(command.data.universeAddress),
 		#commandStr: '>V:1,C:14,L:'+bri+',F:50,@'+command.data.protocolAddress+'#'
-		commandStr: '>V:1,C:13,G:'+command.data.protocolAddress+',L:'+bri+',F:50#'
+		commandStr: '>V:1,C:13,G:'+command.data.protocolAddress+',L:'+bri+',F:75#'
 	}
 
 isWriteMessage = (message) -> message.command is "write"
@@ -65,6 +65,10 @@ createSocket = (ip, cb) ->
 		console.log("Connected to a router at #{ip}")
 		socket.on "error", (err) -> exit(err)
 		socket.on "close", -> exit("Socket closed")
+		setInterval(->
+			#Write to dummy address to keep socket alive
+			socket.write('>V:1,C:14,L:0,F:9000,@65#')
+		, 1000)
 		cb(null,socket)
 
 routerSockets = async.mapSeries routerIps, createSocket, (err, routerSockets) ->
