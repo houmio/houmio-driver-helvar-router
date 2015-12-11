@@ -4,10 +4,10 @@ carrier = require('carrier')
 async = require('async')
 R = require('ramda')
 
+routerIpsS = process.env.ROUTER_IP_ADDRESSES
+routerIps = routerIpsS.split(',')
 
-
-routerPortsS = process.env.ROUTER_PORTS
-routerPorts = routerPortsS.split(',')
+helvarRouterPort = 50000
 
 exit = (msg) ->
   console.log msg
@@ -29,6 +29,7 @@ toDaliCommand = (command) ->
 	bri = if command.data.on then command.data.bri else 0
 	{
 		universeAddress: parseInt(command.data.universeAddress),
+		#commandStr: '>V:1,C:14,L:'+bri+',F:50,@'+command.data.protocolAddress+'#'
 		commandStr: '>V:1,C:13,G:'+command.data.protocolAddress+',L:'+bri+',F:50#'
 	}
 
@@ -55,18 +56,18 @@ runDriver = (routerSockets) ->
 		daliWriteMessages
 			.map parseUniverseAddress
     	.map toDaliCommand
-    	.onValue (d) -> routerSockets[d.universeAddress].write JSON.stringify d.commandStr
+    	.onValue (d) -> routerSockets[d.universeAddress].write d.commandStr
 		bridgeSocket.write (JSON.stringify { command: "driverReady", protocol: "helvar-router"}) + "\n"
 
-createSocket = (port, cb) ->
+createSocket = (ip, cb) ->
 	socket = new net.Socket()
-	socket.connect port, '127.0.0.1', ->
-		console.log("Connected to a router at port #{port}")
+	socket.connect helvarRouterPort, ip, ->
+		console.log("Connected to a router at #{ip}")
 		socket.on "error", (err) -> exit(err)
 		socket.on "close", -> exit("Socket closed")
 		cb(null,socket)
 
-routerSockets = async.mapSeries routerPorts, createSocket, (err, routerSockets) ->
+routerSockets = async.mapSeries routerIps, createSocket, (err, routerSockets) ->
 	runDriver routerSockets
 	if err then exit("Router connection error")
 
