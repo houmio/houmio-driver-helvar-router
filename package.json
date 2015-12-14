@@ -1,5 +1,6 @@
 {
   "name": "houmio-driver-helvar-router",
+  "private":"false",
   "version": "1.0.0",
   "description": "Houm driver for Helvar router",
   "main": "index.js",
