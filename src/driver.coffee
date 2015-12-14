@@ -2,7 +2,6 @@ net = require('net')
 Bacon = require('baconjs')
 carrier = require('carrier')
 async = require('async')
-R = require('ramda')
 
 routerIpsS = process.env.ROUTER_IP_ADDRESSES
 routerIps = routerIpsS.split(',')
