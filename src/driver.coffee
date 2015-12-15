@@ -26,11 +26,17 @@ parseUniverseAddress = (command) ->
 
 toDaliCommand = (command) ->
 	bri = if command.data.on then command.data.bri else 0
-	{
-		universeAddress: parseInt(command.data.universeAddress),
-		#commandStr: '>V:1,C:14,L:'+bri+',F:50,@'+command.data.protocolAddress+'#'
-		commandStr: '>V:1,C:13,G:'+command.data.protocolAddress+',L:'+bri+',F:75#'
-	}
+	if /^g/.test command.data.protocolAddress
+		groupAddress = command.data.protocolAddress.substring 1
+		return {
+			universeAddress: parseInt(command.data.universeAddress),
+			commandStr: '>V:1,C:13,G:'+command.data.protocolAddress+',L:'+bri+',F:75#'
+		}
+	else
+		return {
+			universeAddress: parseInt(command.data.universeAddress),
+			commandStr: '>V:1,C:14,L:'+bri+',F:75,@'+command.data.protocolAddress+'#'
+		}
 
 isWriteMessage = (message) -> message.command is "write"
 
